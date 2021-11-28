@@ -1,0 +1,55 @@
+CommitterName=ETERNALBLUEbullrun
+ProjectName=${PWD##*/}
+BranchName=main
+set -x
+for arg in "$@"; do
+	shift
+	IFS== read -r Opt Val <<< "$arg"
+	if [ -z "$Opt" ]; then
+		Opt = $arg
+	fi
+	echo "$arg : $Opt = $Val"
+	case "$Opt" in
+		"--committer") set -- "$@" "-c$Val" ;;
+		"--project") set -- "$@" "-p$Val" ;;
+		"--branch") set -- "$@" "-b$Val" ;;
+		"--force") set -- "$@" "-f" ;;
+		"--clean") set -- "$@" "-l" ;;
+		*) set -- "$@" "$Opt$Val" ;;
+	esac
+done
+while getopts c:p:b:fl argv; do
+	echo "$argv = $OPTARG"
+	case $argv in
+		c) CommitterName=${OPTARG}
+	;;	p) ProjectName=${OPTARG}
+	;;	b) BranchName=${OPTARG}
+	;;	f) 
+			if test -d ".git/"; then
+				read -p "ReMove `pwd`/.git/? [y/n]: " input
+				if [ "y" == "$input" ]; then
+					rm -f .git/objects/*/*
+					rm -r .git/
+				fi
+			fi
+	;;	l)
+			read -p "ReMove `pwd`/*? (will rm setup.sh if it exists!) [y/n]: " input
+			if [ "y" == "$input" ]; then
+#				mv "$0" ../
+				rm *
+#				mv "../$0" "./" #TODO: fix for source'd scripts
+			fi
+	;;	*) echo "Invalid argument: '$argv'"
+	;;esac
+done
+if test -d ".git/"; then
+	echo "Found `pwd`/.git/, re-run with --force to replace it."
+else
+	git init
+	sed -i'' "s/https:\/\//ssh:\/\/git\@/g" .git/config
+	git remote add origin ssh://git@github.com
+	git remote set-url origin ssh://git@github.com/$CommitterName/$ProjectName\.git
+	git fetch origin
+	git switch $BranchName
+fi
+
