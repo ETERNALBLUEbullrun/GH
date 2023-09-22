@@ -1,6 +1,6 @@
 CommitterName=ETERNALBLUEbullrun
 ProjectName=${PWD##*/}
-BranchName=main
+BranchName=trunk
 set -x
 for arg in "$@"; do
 	shift
